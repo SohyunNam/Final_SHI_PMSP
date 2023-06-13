@@ -3,6 +3,8 @@ from cfg import *
 from agent.ppo import *  # 학습 알고리즘
 from environment.env import WeldingLine  # 학습 환경
 
+torch.manual_seed(42)
+random.seed(42)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
@@ -99,7 +101,7 @@ if __name__ == "__main__":
         done = False
 
         while not done:
-            for t in range(T_horizon):
+            for t in range(cfg.T_horizon):
                 logit = agent.pi(torch.from_numpy(state).float().to(device))
                 prob = torch.softmax(logit, dim=-1)
 

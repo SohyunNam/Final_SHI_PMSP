@@ -2,6 +2,8 @@ import simpy, math, copy, random
 import pandas as pd
 import numpy as np
 
+np.random.seed(42)
+random.seed(42)
 
 class Steel:
     def __init__(self, name, block, steel, feature, due_date):

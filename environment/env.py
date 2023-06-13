@@ -5,6 +5,8 @@ import copy
 import numpy as np
 from environment.simulation import *
 
+np.random.seed(42)
+random.seed(42)
 
 class WeldingLine:
     def __init__(self, num_block=80, num_line=3, block_sample=None,

@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from ada_hessian import AdaHessian
 
+torch.manual_seed(42)
+
 from torch.distributions import Categorical
 from environment.env import *
 
