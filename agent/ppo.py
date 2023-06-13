@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from ada_hessian import AdaHessian
 
 from torch.distributions import Categorical
 from environment.env import *
@@ -11,14 +12,13 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 
 class PPO(nn.Module):
-    def __init__(self, state_dim, action_dim, learning_rate=1e-6, gamma=0.98, lmbda=0.5, eps_clip=0.2, K_epoch=5,
-                 T_horizon=50):
+    def __init__(self, cfg, state_dim, action_dim):
         super(PPO, self).__init__()
-        self.gamma = gamma
-        self.lmbda = lmbda
-        self.eps_clip = eps_clip
-        self.K_epoch = K_epoch
-        self.T_horizon = T_horizon
+        self.gamma = cfg.gamma
+        self.lmbda = cfg.lmbda
+        self.eps_clip = cfg.eps_clip
+        self.K_epoch = cfg.K_epoch
+        self.T_horizon = cfg.T_horizon
         self.data = []
 
         self.fc1 = nn.Linear(state_dim, 512)
@@ -26,7 +26,11 @@ class PPO(nn.Module):
         self.fc3 = nn.Linear(512, 256)
         self.fc_pi = nn.Linear(256, action_dim)
         self.fc_v = nn.Linear(256, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        self.optim = cfg.optim
+        if cfg.optim == "Adam":
+            self.optimizer = optim.Adam(self.parameters(), lr=cfg.lr)
+        elif cfg.optim == "AdaHessian":
+            self.optimizer = AdaHessian(self.parameters(), lr=cfg.lr)
 
     def pi(self, x):
         x = F.relu(self.fc1(x))
@@ -91,7 +95,10 @@ class PPO(nn.Module):
             loss = -torch.min(surr1, surr2) + 0.5 * F.smooth_l1_loss(self.v(s), td_target.detach())
 
             self.optimizer.zero_grad()
-            loss.mean().backward()
+            if self.optim == "Adam":
+                loss.mean().backward()
+            elif self.optim == "AdaHessian":
+                loss.mean().backward(create_graph=True)
             self.optimizer.step()
 
     def save(self, episode, file_dir):

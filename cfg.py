@@ -19,6 +19,8 @@ def get_cfg():
     parser.add_argument("--eps_clip", type=float, default=0.2, help="clipping paramter")
     parser.add_argument("--K_epoch", type=int, default=5, help="optimization epoch")
     parser.add_argument("--T_horizon", type=int, default=50, help="running horizon")
+    parser.add_argument("--optim", type=str, default="Adam", help="optimizer, Adam | AdaHessian")
+
     # parser.add_argument("--log_interval", type=int, default=100, help="log interval")
 
     # parser.add_argument("--w_delay", type=float, default=1.0, help="weight for minimizing delays")
