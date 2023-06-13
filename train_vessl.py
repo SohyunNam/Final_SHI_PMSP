@@ -47,7 +47,7 @@ def evaluate(episode, agent, simulation_dir, test_sample_data):
 
 if __name__ == "__main__":
     cfg = get_cfg()
-    vessl.init(organization="snu-eng-dgx", project="Final_SHI_PMSP", hp=cfg)
+    vessl.init(organization="snu-eng-dgx", project="Final-SHI-PMSP", hp=cfg)
 
     load_model = cfg.load_model
     num_block = cfg.num_block
