@@ -201,66 +201,65 @@ class WeldingLine:
 
         # Feature 2, 3
         calling_line = self.model[self.routing.line]
-        if calling_line.job is not None:
-            setting = calling_line.setup
+        setting = calling_line.setup
 
-            non_setup_list = list()
-            setup_list = list()
+        non_setup_list = list()
+        setup_list = list()
 
-            if len(input_queue) > 0:
-                for job in input_queue:
-                    if job.web_face == setting:
-                        non_setup_list.append(job)
-                    else:
-                        setup_list.append(job)
+        if len(input_queue) > 0:
+            for job in input_queue:
+                if job.web_face == setting:
+                    non_setup_list.append(job)
+                else:
+                    setup_list.append(job)
 
-            def _cal_expected_finish_time(var, job_list):
-                expected_time = self.sim_env.now
-                for job in job_list:
-                    pt = job.avg_pt * var
-                    if (expected_time + pt) % 1440 <= 960:
-                        expected_time += pt
-                    else:
-                        day = math.floor(expected_time / 1440)
-                        next_day = day + 1 if day % 7 != 5 else day + 2
-                        # next_day = day + 1
-                        expected_time = next_day * 1440 + pt
+        def _cal_expected_finish_time(var, job_list):
+            expected_time = self.sim_env.now
+            for job in job_list:
+                pt = job.avg_pt * var
+                if (expected_time + pt) % 1440 <= 960:
+                    expected_time += pt
+                else:
+                    day = math.floor(expected_time / 1440)
+                    next_day = day + 1 if day % 7 != 5 else day + 2
+                    # next_day = day + 1
+                    expected_time = next_day * 1440 + pt
 
-                return expected_time
+            return expected_time
 
-            # Feature 2
-            if len(non_setup_list) > 0:
-                g_1 = 0
-                g_2 = 0
-                g_3 = 0
-                g_4 = 0
+        # Feature 2
+        if len(non_setup_list) > 0:
+            g_1 = 0
+            g_2 = 0
+            g_3 = 0
+            g_4 = 0
 
-                for non_setup_job in non_setup_list:
-                    job_dd = non_setup_job.due_date * 1440 + 960
-                    # finished_jobs = self.model["Sink"].finished[non_setup_job.block]["num"] if non_setup_job.block in \
-                    #                                                                     self.model[
-                    #                                                                         "Sink"].finished.keys() else 0
+            for non_setup_job in non_setup_list:
+                job_dd = non_setup_job.due_date * 1440 + 960
+                # finished_jobs = self.model["Sink"].finished[non_setup_job.block]["num"] if non_setup_job.block in \
+                #                                                                     self.model[
+                #                                                                         "Sink"].finished.keys() else 0
 
-                    # num_residual = self.sim_block[non_setup_job.block]["num_steel"] - finished_jobs
-                    job_list = [job for job in input_queue if job.block == non_setup_job.block]
-                    max_tightness = job_dd - _cal_expected_finish_time(1 + self.pt_var, job_list)
-                    min_tightness = job_dd - _cal_expected_finish_time(1 - self.pt_var, job_list)
+                # num_residual = self.sim_block[non_setup_job.block]["num_steel"] - finished_jobs
+                job_list = [job for job in input_queue if job.block == non_setup_job.block]
+                max_tightness = job_dd - _cal_expected_finish_time(1 + self.pt_var, job_list)
+                min_tightness = job_dd - _cal_expected_finish_time(1 - self.pt_var, job_list)
 
-                    if max_tightness > 0:
-                        g_1 += 1
-                    elif (max_tightness <= 0) and (min_tightness > 0):
-                        g_2 += 1
-                    elif (min_tightness <= 0) and (self.sim_env.now > job_dd):
-                        g_3 += 1
-                    elif self.sim_env.now < job_dd:
-                        g_4 += 1
-                    else:
-                        print(0)
+                if max_tightness > 0:
+                    g_1 += 1
+                elif (max_tightness <= 0) and (min_tightness > 0):
+                    g_2 += 1
+                elif (min_tightness <= 0) and (self.sim_env.now < job_dd):
+                    g_3 += 1
+                elif self.sim_env.now > job_dd:
+                    g_4 += 1
+                else:
+                    print(0)
 
-                f_2[0] = g_1 / len(non_setup_list)
-                f_2[1] = g_2 / len(non_setup_list)
-                f_2[2] = g_3 / len(non_setup_list)
-                f_2[3] = g_4 / len(non_setup_list)
+            f_2[0] = g_1 / len(non_setup_list)
+            f_2[1] = g_2 / len(non_setup_list)
+            f_2[2] = g_3 / len(non_setup_list)
+            f_2[3] = g_4 / len(non_setup_list)
 
             # Feature 3
             if len(setup_list) > 0:
@@ -280,9 +279,9 @@ class WeldingLine:
                         g_1 += 1
                     elif (max_tightness <= 0) and (min_tightness > 0):
                         g_2 += 1
-                    elif (min_tightness <= 0) and (self.sim_env.now > job_dd):
+                    elif (min_tightness <= 0) and (self.sim_env.now < job_dd):
                         g_3 += 1
-                    elif self.sim_env.now < job_dd:
+                    elif self.sim_env.now > job_dd:
                         g_4 += 1
                     else:
                         print(0)
@@ -304,8 +303,8 @@ class WeldingLine:
 
         # Earliness / Tardiness
         for difference in self.model["Sink"].finished_block:
-            self.reward += (np.exp(- difference) - 1) * self.reward_weight[0]
-            self.tard_reward += (np.exp(- difference) - 1) * self.reward_weight[0]
+            self.reward += (np.exp(- difference * 24 * 60) - 1) * self.reward_weight[0]
+            self.tard_reward += (np.exp(- difference * 24 * 60) - 1) * self.reward_weight[0]
             # elif difference_time > 0:  # earliness, vessl experiment 5, 6, 7, 10에는 존재
             #     self.reward += np.exp(-difference_time) - 1
         self.model["Sink"].finished_block = list()
