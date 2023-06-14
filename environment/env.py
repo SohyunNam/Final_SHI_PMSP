@@ -78,8 +78,8 @@ class WeldingLine:
         self.tard_reward = 0.0
         self.setup_reward = 0.0
         if self.is_train:
-            self.pt_var = np.random.choice([0.0, 0.1, 0.2])
-            self.ddt = np.random.choice([0.8, 1.0, 1.2])
+            self.pt_var = np.random.uniform(low=0.1, high=0.5)
+            self.ddt = np.random.uniform(low=0.8, high=1.2)
         self.sim_env, self.model, self.routing, self.monitor = self._modeling()
 
         self.monitor.reset()
@@ -249,9 +249,9 @@ class WeldingLine:
                     g_1 += 1
                 elif (max_tightness <= 0) and (min_tightness > 0):
                     g_2 += 1
-                elif (min_tightness <= 0) and (self.sim_env.now < job_dd):
+                elif (min_tightness <= 0) and (self.sim_env.now > job_dd):
                     g_3 += 1
-                elif self.sim_env.now > job_dd:
+                elif self.sim_env.now < job_dd:
                     g_4 += 1
                 else:
                     print(0)
@@ -279,9 +279,9 @@ class WeldingLine:
                         g_1 += 1
                     elif (max_tightness <= 0) and (min_tightness > 0):
                         g_2 += 1
-                    elif (min_tightness <= 0) and (self.sim_env.now < job_dd):
+                    elif (min_tightness <= 0) and (self.sim_env.now > job_dd):
                         g_3 += 1
-                    elif self.sim_env.now > job_dd:
+                    elif self.sim_env.now < job_dd:
                         g_4 += 1
                     else:
                         print(0)
