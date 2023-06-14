@@ -79,12 +79,12 @@ if __name__ == "__main__":
 
     agent = PPO(cfg, env.state_size, env.action_size).to(device)
 
-    # if cfg.load_model:
-    # checkpoint = torch.load('./output/train_ddt/model/episode-10001.pt')
-    # start_episode = checkpoint['episode'] + 1
-    # agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # # else:
-    start_episode = 1
+    if cfg.load_model:
+        checkpoint = torch.load('./trained_model/episode-30000.pt')
+        start_episode = checkpoint['episode'] + 1
+        agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    else:
+        start_episode = 1
 
     with open(log_dir + "train_log.csv", 'w') as f:
         f.write('episode, reward, reward_tard, reward_setup, tardiness, setup, makespan\n')
