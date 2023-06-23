@@ -142,7 +142,7 @@ class WeldingLine:
             total_pt = 0.0
             for steel_name in block_data.keys():
                 avg_speed = 1200 - ((block_data[steel_name]["weld_size"] - 4.5) / 0.5) * 50
-                total_pt = (block_data[steel_name]["length"] / avg_speed) * block_data[steel_name]["num_steel"]
+                total_pt += (block_data[steel_name]["length"] / avg_speed) * block_data[steel_name]["num_steel"]
 
             create_time = due_date_list[block_idx]
             block_due_date = math.ceil(create_time + (total_pt * self.ddt) / (24 * 60))
