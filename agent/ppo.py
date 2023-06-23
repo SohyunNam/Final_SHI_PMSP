@@ -14,13 +14,15 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 
 class PPO(nn.Module):
-    def __init__(self, cfg, state_dim, action_dim):
+    def __init__(self, cfg, state_dim, action_dim, lr=None, optimizer_name=None, eps_clip=None):
         super(PPO, self).__init__()
         self.gamma = cfg.gamma
         self.lmbda = cfg.lmbda
-        self.eps_clip = cfg.eps_clip
+        self.eps_clip = cfg.eps_clip if eps_clip is None else eps_clip
         self.K_epoch = cfg.K_epoch
         self.T_horizon = cfg.T_horizon
+        self.lr = cfg.lr if lr is None else lr
+        self.optim = cfg.optim if optimizer_name is None else optimizer_name
         self.data = []
 
         self.fc1 = nn.Linear(state_dim, 512)
@@ -28,11 +30,10 @@ class PPO(nn.Module):
         self.fc3 = nn.Linear(512, 256)
         self.fc_pi = nn.Linear(256, action_dim)
         self.fc_v = nn.Linear(256, 1)
-        self.optim = cfg.optim
         if cfg.optim == "Adam":
-            self.optimizer = optim.Adam(self.parameters(), lr=cfg.lr)
+            self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
         elif cfg.optim == "AdaHessian":
-            self.optimizer = AdaHessian(self.parameters(), lr=cfg.lr)
+            self.optimizer = AdaHessian(self.parameters(), lr=self.lr)
 
     def pi(self, x):
         x = F.relu(self.fc1(x))

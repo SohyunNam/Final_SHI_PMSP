@@ -58,8 +58,6 @@ if __name__ == "__main__":
 
     num_episode = cfg.max_episode
 
-    score_avg = 0
-
     with open('SHI_sample.json', 'r') as f:
         block_sample = json.load(f)
 

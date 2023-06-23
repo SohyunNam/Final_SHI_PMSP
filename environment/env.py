@@ -298,8 +298,8 @@ class WeldingLine:
         self.reward = 0
         # setup
         if self.routing.setup:
-            self.reward -= 1 * self.reward_weight[1]
-            self.setup_reward -= -1 * self.reward_weight[1]
+            self.reward -= 0.1 * self.reward_weight[1]
+            self.setup_reward -= -0.1 * self.reward_weight[1]
 
         # Earliness / Tardiness
         for difference in self.model["Sink"].finished_block:
