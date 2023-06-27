@@ -277,7 +277,8 @@ class WeldingLine:
             self.time_list.append(self.sim_env.now)
             setup_ratio = self.monitor.setup / self.routing.created if self.routing.created > 0 else 0.0
             self.setup_ratio_list.append(setup_ratio)
-            self.tardiness_ratio_list.append(sum(self.monitor.tardiness) / self.model["Sink"].total_finish)
+            tardiness_ratio = sum(self.monitor.tardiness) / self.model["Sink"].total_finish if self.model["Sink"].total_finish > 0 else 0.0
+            self.tardiness_ratio_list.append(tardiness_ratio)
 
         f_8[0] = self.setup_ratio_list[-1] if len(self.setup_ratio_list) else 0.0
         f_9[0] = self.tardiness_ratio_list[-1] if len(self.tardiness_ratio_list) else 0.0
