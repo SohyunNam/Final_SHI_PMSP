@@ -282,10 +282,11 @@ class WeldingLine:
         f_8[0] = self.setup_ratio_list[-1] if len(self.setup_ratio_list) else 0.0
         f_9[0] = self.tardiness_ratio_list[-1] if len(self.tardiness_ratio_list) else 0.0
         if len(self.time_list) > 1:
-            v_setup = (self.setup_ratio_list[-1] - self.setup_ratio_list[-2]) / (self.time_list[-1] - self.time_list[-2])
+            v_setup = (self.setup_ratio_list[-1] - self.setup_ratio_list[-2]) / (
+                        self.time_list[-1] - self.time_list[-2]) if self.time_list[-1] != self.time_list[-2] else 0.0
             f_8[1] = 1 / (1 + np.exp(-v_setup))
             v_tard = (self.tardiness_ratio_list[-1] - self.tardiness_ratio_list[-2]) / (
-                    self.time_list[-1] - self.time_list[-2])
+                    self.time_list[-1] - self.time_list[-2]) if self.time_list[-1] != self.time_list[-2] else 0.0
             f_9[1] = 1 / (1 + np.exp(-v_tard))
 
         state = np.concatenate((f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8, f_9), axis=None)

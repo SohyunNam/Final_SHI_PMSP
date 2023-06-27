@@ -17,7 +17,7 @@ if __name__ == "__main__":
         elif cfg.env == "EE":
             from environment.env_2 import WeldingLine
     else:
-        from environment.env import WeldingLine
+        from environment.env_2 import WeldingLine
 
     load_model = False
     num_block = 80
