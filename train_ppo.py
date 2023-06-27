@@ -22,9 +22,9 @@ if __name__ == "__main__":
     load_model = False
     num_block = 80
     weight_list = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.0]
-    weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
-              160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
-              240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
+    rule_weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
+                   160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
+                   240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
     for weight in weight_list:
         weight_tard = weight
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             os.makedirs(log_dir)
 
         env = WeldingLine(num_block=num_block, reward_weight=[weight_tard, weight_setup], block_sample=block_sample,
-                          rule_weight=weight[num_block], is_train=True)
+                          rule_weight=rule_weight[num_block], is_train=True)
 
         agent = PPO(cfg, env.state_size, env.action_size, lr=lr, eps_clip=eps_clip, optimizer_name=optim).to(device)
 
