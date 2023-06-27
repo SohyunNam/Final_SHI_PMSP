@@ -100,7 +100,6 @@ class Process:
                 setup_time = 5
                 setup_memo = "{0} to {1}".format(self.setup, self.job.web_face)
                 self.monitor.setup += 1
-                self.monitor.setup_list.append(1)
                 self.setup = part.web_face
             else:
                 self.monitor.record(time=self.env.now, part=part.name, block=part.block, event="Non-SetUp",
@@ -157,12 +156,13 @@ class Process:
 
 
 class Routing:
-    def __init__(self, env, model, block_info, monitor, end_num):
+    def __init__(self, env, model, block_info, monitor, end_num, weight=None):
         self.env = env
         self.model = model
         self.block_info = block_info
         self.monitor = monitor
         self.end_num = end_num
+        self.weight = weight
 
         self.indicator = False
         self.decision = False
@@ -243,8 +243,8 @@ class Routing:
     def ATCS(self):
         job_list = copy.deepcopy(self.queue_list)
         calling_line = self.model[self.line]
-        k1 = 6.7
-        k2 = 1.3
+        k1 = self.weight["ATCS"][0]
+        k2 = self.weight["ATCS"][1]
         p_avg = np.mean(
             [self.block_info["Block_{0}".format(job.split("_")[1])][job].avg_pt for job in job_list])
         s_avg = np.mean(
@@ -283,7 +283,7 @@ class Routing:
 
     def COVERT(self):
         job_list = copy.deepcopy(self.queue_list)
-        K = 14
+        K = self.weight["COVERT"]
 
         idx_list = []
         for job_name in job_list:
@@ -347,8 +347,9 @@ class Sink:
         self.makespan = self.env.now / 1440
 
         job.completed = math.floor(self.env.now/1440)  # 끝난 날짜
-        difference = max((self.env.now / 1440) - self.block_info[job.block]["due_date"] - 1, 0) # due date 대비 얼마나 늦게 끝났는 지 (현재 시각 - 납기일)
+        difference = (max(self.env.now - (self.block_info[job.block]["due_date"] * 1440 + 960), 0)) / 60  # due date 대비 얼마나 늦게 끝났는 지 (현재 시각 - 납기일)
         self.finished_block.append(difference) # Steel 단위로 tardiness penalty 주는 걸로 바꿈, # State 및 Reward 시 사용
+        self.monitor.tardiness.append(difference)
 
         day = math.floor(self.env.now / 1440)  # 현재 날짜
         if day not in self.monitor.throughput.keys():
@@ -360,7 +361,6 @@ class Sink:
         if self.finished[job.block]["num"] == self.block_info[job.block]["num_steel"]:
             self.monitor.record(time=self.env.now, part=job.name, block=job.block, event="Block Completed",
                                 process="Sink", memo=difference)
-            self.monitor.tardiness.append(difference)
 
             self.finished[job.block]["time"].append(self.env.now)
 
@@ -381,7 +381,6 @@ class Monitor:
         self.memo = list()
 
         self.setup = 0
-        self.setup_list = list()
         self.tardiness = list()
         self.throughput = dict()
 

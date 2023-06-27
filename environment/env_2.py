@@ -23,7 +23,7 @@ class WeldingLine:
         self.pt_var = pt_var
         self.is_train = is_train
 
-        self.state_size = 14
+        self.state_size = 14 + 4 * num_line
         self.action_size = 4
 
         self.tard_reward = 0.0
@@ -170,7 +170,7 @@ class WeldingLine:
                 create_dict[create_time] = list()
             create_dict[create_time].append(copy.deepcopy(block_steel_list))
 
-        routing = Routing(env, model, self.sim_block, monitor, self.num_jobs, weight=self.rule_weight)
+        routing = Routing(env, model, self.sim_block, monitor, self.num_jobs, self.rule_weight)
         model["Source"] = Source(env, create_dict, routing, iat, monitor)
 
         for i in range(self.num_line):
@@ -182,37 +182,18 @@ class WeldingLine:
         return env, model, routing, monitor
 
     def _get_state(self):
-        # define 4 features
-        f_1 = np.zeros(self.num_line)  # Setup -> 현재 라인의 셋업값과 같은 셋업인 부재의 수
-        f_2 = np.zeros(4)  # Due Date -> Tardiness Level for non-setup
-        f_3 = np.zeros(4)  # Due Date -> Tardiness Level for setup
-        f_4 = np.zeros(self.num_line)  # General Info -> 각 라인에서의 남은 작업시간
+        # define 9 features
+        f_1 = np.zeros(4)  # tardiness level of jobs in rouitng.queue
+        f_2 = np.zeros(3)  # tightness level min, avg, max
+        f_3 = np.zeros(2)  # routing을 요청한 경우 해당 machine의 셋업값, queue에 있는 job 중 해당 셋업값과 같은 셋업값을 갖는 job의 수
+        f_4 = np.zeros(self.num_line)  # 각 machine의 셋업 상태
+        f_5 = np.zeros([self.num_line, 2])  # machine 별 각 셋업값을 가지는 job의 비율(routing.queue에 있는 job들 중에서) / 가능한 셋업 경우의 수 : 0~5, 6가지
+        f_6 = np.zeros(1)  # completion rate
+        f_7 = np.zeros(self.num_line)  # 각 machine에서의 progress rate
+        f_8 = np.zeros(2)  # tardiness level index (x, v)
+        f_9 = np.zeros(2)  # setup index (x, v)
 
-        input_queue = copy.deepcopy(self.routing.queue.items)
-
-        # Feature 1, 4
-        for line_num in range(self.num_line):
-            line = self.model["Line {0}".format(line_num)]
-            line_feature = line.setup
-            same_setup_list = [1 for job in input_queue if job.web_face == line_feature]
-            f_1[line_num] = np.sum(same_setup_list) / len(input_queue) if len(input_queue) > 0 else 0.0
-
-            if line.job is not None and not line.idle:
-                f_4[line_num] = (line.planned_finish_time - self.sim_env.now) / (line.planned_finish_time - line.start_time)
-
-        # Feature 2, 3
-        calling_line = self.model[self.routing.line]
-        setting = calling_line.setup
-
-        non_setup_list = list()
-        setup_list = list()
-
-        if len(input_queue) > 0:
-            for job in input_queue:
-                if job.web_face == setting:
-                    non_setup_list.append(job)
-                else:
-                    setup_list.append(job)
+        input_queue = copy.deepcopy(list(self.routing.queue.items))
 
         def _cal_expected_finish_time(var, job_list):
             expected_time = self.sim_env.now
@@ -228,23 +209,22 @@ class WeldingLine:
 
             return expected_time
 
-        # Feature 2
-        if len(non_setup_list) > 0:
+        # Feature 1, 2
+        tt_list = list()
+        if len(input_queue) > 0:
             g_1 = 0
             g_2 = 0
             g_3 = 0
             g_4 = 0
 
-            for non_setup_job in non_setup_list:
-                job_dd = non_setup_job.due_date * 1440 + 960
-                # finished_jobs = self.model["Sink"].finished[non_setup_job.block]["num"] if non_setup_job.block in \
-                #                                                                     self.model[
-                #                                                                         "Sink"].finished.keys() else 0
-
-                # num_residual = self.sim_block[non_setup_job.block]["num_steel"] - finished_jobs
-                job_list = [job for job in input_queue if job.block == non_setup_job.block]
+            for job in input_queue:
+                job_dd = job.due_date * 1440 + 960
+                job_list = [q_job for q_job in input_queue if job.block == job.block]
                 max_tightness = job_dd - _cal_expected_finish_time(1 + self.pt_var, job_list)
                 min_tightness = job_dd - _cal_expected_finish_time(1 - self.pt_var, job_list)
+
+                avg_tightness = job_dd - _cal_expected_finish_time(1, job_list)
+                tt_list.append(avg_tightness)
 
                 if max_tightness > 0:
                     g_1 += 1
@@ -257,42 +237,58 @@ class WeldingLine:
                 else:
                     print(0)
 
-            f_2[0] = g_1 / len(non_setup_list)
-            f_2[1] = g_2 / len(non_setup_list)
-            f_2[2] = g_3 / len(non_setup_list)
-            f_2[3] = g_4 / len(non_setup_list)
+            f_1[0] = g_1 / len(input_queue)
+            f_1[1] = g_2 / len(input_queue)
+            f_1[2] = g_3 / len(input_queue)
+            f_1[3] = g_4 / len(input_queue)
 
-            # Feature 3
-            if len(setup_list) > 0:
-                g_1 = 0
-                g_2 = 0
-                g_3 = 0
-                g_4 = 0
+        f_2[0] = np.min(tt_list) if len(tt_list) > 0 else 0.0
+        f_2[1] = np.mean(tt_list) if len(tt_list) > 0 else 0.0
+        f_2[2] = np.max(tt_list) if len(tt_list) > 0 else 0.0
 
-                for setup_job in setup_list:
-                    job_dd = setup_job.due_date * 1440 + 960
+        # f_3
+        calling_line = self.model[self.routing.line]
+        setting = calling_line.setup
+        f_3[0] = setting / 200
 
-                    job_list = [job for job in input_queue if job.block == setup_job.block]
-                    max_tightness = job_dd - _cal_expected_finish_time(1 + self.pt_var, job_list)
-                    min_tightness = job_dd - _cal_expected_finish_time(1 - self.pt_var, job_list)
+        same_feature = 0
+        for job in input_queue:
+            if job.web_face == setting:
+                same_feature += 1
+        f_3[1] = same_feature / len(input_queue) if len(input_queue) > 0 else 0.0
 
-                    if max_tightness > 0:
-                        g_1 += 1
-                    elif (max_tightness <= 0) and (min_tightness > 0):
-                        g_2 += 1
-                    elif (min_tightness <= 0) and (self.sim_env.now > job_dd):
-                        g_3 += 1
-                    elif self.sim_env.now < job_dd:
-                        g_4 += 1
-                    else:
-                        print(0)
+        # f_4, 5, 7
+        for line_num in range(self.num_line):
+            line = self.model["Line {0}".format(line_num)]
+            line_feature = line.setup
+            f_4[line_num] = line_feature / 200
 
-                f_3[0] = g_1 / len(setup_list)
-                f_3[1] = g_2 / len(setup_list)
-                f_3[2] = g_3 / len(setup_list)
-                f_3[3] = g_4 / len(setup_list)
+            same_setup_list = [1 for job in input_queue if job.web_face == line_feature]
+            f_5[line_num][0] = np.sum(same_setup_list) / len(input_queue) if len(input_queue) > 0 else 0.0
+            f_5[line_num][1] = 1 - f_5[line_num][0]
 
-        state = np.concatenate((f_1, f_2, f_3, f_4), axis=None)
+            if line.job is not None and not line.idle:
+                f_7[line_num] = (self.sim_env.now - line.start_time) / (line.planned_finish_time - line.start_time)
+
+        # f_6
+        f_6[0] = self.model["Sink"].total_finish / self.num_jobs
+
+        if self.sim_env.now > 0:
+            self.time_list.append(self.sim_env.now)
+            setup_ratio = self.monitor.setup / self.routing.created if self.routing.created > 0 else 0.0
+            self.setup_ratio_list.append(setup_ratio)
+            self.tardiness_ratio_list.append(sum(self.monitor.tardiness) / self.model["Sink"].total_finish)
+
+        f_8[0] = self.setup_ratio_list[-1] if len(self.setup_ratio_list) else 0.0
+        f_9[0] = self.tardiness_ratio_list[-1] if len(self.tardiness_ratio_list) else 0.0
+        if len(self.time_list) > 1:
+            v_setup = (self.setup_ratio_list[-1] - self.setup_ratio_list[-2]) / (self.time_list[-1] - self.time_list[-2])
+            f_8[1] = 1 / (1 + np.exp(-v_setup))
+            v_tard = (self.tardiness_ratio_list[-1] - self.tardiness_ratio_list[-2]) / (
+                    self.time_list[-1] - self.time_list[-2])
+            f_9[1] = 1 / (1 + np.exp(-v_tard))
+
+        state = np.concatenate((f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8, f_9), axis=None)
         return state
 
     def _calculate_reward(self):

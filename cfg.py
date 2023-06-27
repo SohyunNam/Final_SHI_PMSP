@@ -5,6 +5,7 @@ def get_cfg():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--use_vessl", type=bool, default=False)
     parser.add_argument("--load_model", type=bool, default=False, help="load the trained model")
     parser.add_argument("--model_path", type=str, default=None, help="model file path")
     parser.add_argument("--max_episode", type=int, default=10000, help="number of episodes")
@@ -20,6 +21,8 @@ def get_cfg():
     parser.add_argument("--K_epoch", type=int, default=5, help="optimization epoch")
     parser.add_argument("--T_horizon", type=int, default=50, help="running horizon")
     parser.add_argument("--optim", type=str, default="Adam", help="optimizer, Adam | AdaHessian")
+
+    parser.add_argument("--env", type=str, default="OE", help="optimizer, OE | EE")
 
     # parser.add_argument("--log_interval", type=int, default=100, help="log interval")
 
