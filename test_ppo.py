@@ -16,6 +16,8 @@ if __name__ == "__main__":
         from environment.env import *
     elif cfg.env == "EE":
         from environment.env_2 import *
+    else:
+        from environment.env import *
 
     num_block_list = [80, 160, 240]
     ddt_list = [0.8, 1.0, 1.2]
@@ -98,7 +100,7 @@ if __name__ == "__main__":
 
                         else:  # Heuristic rule
                             tard, setup = test(num_block=num_block, block_sample=block_sample,
-                                               sample_data=sample_data, routing_rule=model,
+                                               sample_data=test_data, routing_rule=model,
                                                file_path=simulation_dir_rule + '/{0}_episode_'.format(model),
                                                ddt=ddt, pt_var=pt_var)
                             output_dict[test_i][model] = {"Tardiness": tard, "Setup": setup}
