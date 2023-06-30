@@ -95,9 +95,9 @@ if __name__ == "__main__":
                                     state = next_state
 
                                     if done:
-                                        log = env.get_logs(
-                                            simulation_dir_rule + '/rl_{0}_episode_{1}_{2}.csv'.format(model, test_i,
-                                                                                                       i))
+                                        # log = env.get_logs(
+                                        #     simulation_dir_rule + '/rl_{0}_episode_{1}_{2}.csv'.format(model, test_i,
+                                        #                                                               i))
                                         tard_list.append(sum(env.monitor.tardiness) / env.model["Sink"].total_finish)
                                         setup_list.append(env.monitor.setup / env.model["Sink"].total_finish)
                                         break
