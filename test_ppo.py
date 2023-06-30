@@ -27,7 +27,12 @@ if __name__ == "__main__":
               160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
               240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
-    trained_model = ["SSPT", "ATCS", "MDD", "COVERT"]
+    trained_model = list()
+    for rw in ["5_5", "6_4", "7_3", "8_2", "9_1"]:
+        for optim in ["Adam", "AH"]:
+            trained_model.append("{0}_{1}".format(rw, optim))
+    trained_model += ["SSPT", "ATCS", "MDD", "COVERT"]
+
     simulation_dir = './output/test_ppo_ep1/simulation' if not cfg.use_vessl else "/simulation"
     if not os.path.exists(simulation_dir):
         os.makedirs(simulation_dir)
@@ -51,7 +56,9 @@ if __name__ == "__main__":
                     output_dict[test_i] = dict()
                     test_data = sample_data[test_i]
                     for model in trained_model:
-                        print("    {0} | Model = {1}".format(test_i, model))
+                        print(
+                            "{0} | {1} | {2} | Test {3} | Model = {4}".format(num_block, round(ddt, 1), round(pt_var, 1),
+                                                                              test_i, model))
                         simulation_dir_rule = simulation_dir + '/{0}_{1}_{2}'.format(num_block, str(round(pt_var, 1)), str(round(ddt, 1)))
                         if not os.path.exists(simulation_dir_rule):
                             os.makedirs(simulation_dir_rule)
@@ -71,7 +78,7 @@ if __name__ == "__main__":
                                                   ddt=ddt,
                                                   is_train=False)
 
-                                model_path = "trained_model/{0}.pt".format(model)
+                                model_path = "./trained_model/{0}_episode-50000.pt".format(model)
                                 agent = PPO(cfg, env.state_size, env.action_size).to(device)
                                 checkpoint = torch.load(model_path)
                                 agent.load_state_dict(checkpoint["model_state_dict"])
