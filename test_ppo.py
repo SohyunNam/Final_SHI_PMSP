@@ -60,7 +60,7 @@ if __name__ == "__main__":
                             tard_list = list()
                             setup_list = list()
 
-                            for i in range(20):
+                            for i in range(cfg.test_num):
                                 env = WeldingLine(num_block=num_block,
                                                   block_sample=block_sample,
                                                   rule_weight=weight[num_block],
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                             tard, setup = test(num_block=num_block, block_sample=block_sample,
                                                sample_data=test_data, routing_rule=model,
                                                file_path=simulation_dir_rule + '/{0}_episode_'.format(model),
-                                               ddt=ddt, pt_var=pt_var)
+                                               ddt=ddt, pt_var=pt_var, test_num=cfg.test_num)
                             output_dict[test_i][model] = {"Tardiness": tard, "Setup": setup}
 
                 with open(simulation_dir + "/Test Output({0}, {1}, {2}).json".format(num_block, str(round(pt_var, 1)),
