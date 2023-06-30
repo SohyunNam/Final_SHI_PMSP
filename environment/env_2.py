@@ -98,7 +98,7 @@ class WeldingLine:
 
     def _modeling(self):
         # data modeling
-        iat = (960 * 6 * int(self.num_block / 80)) / self.num_block
+        iat = (960 * 6 * round(self.num_block / 80)) / self.num_block
         if self.test_sample is None:
             if self.num_block == 240:
                 week3_due_date = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]
