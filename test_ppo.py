@@ -33,7 +33,7 @@ if __name__ == "__main__":
             trained_model.append("{0}_{1}".format(rw, optim))
     trained_model += ["SSPT", "ATCS", "MDD", "COVERT"]
 
-    simulation_dir = './output/test_ppo_ep1/simulation' if not cfg.use_vessl else "/simulation"
+    simulation_dir = './output/test_ppo_ep1/simulation' if not cfg.use_vessl else "/output/simulation"
     if not os.path.exists(simulation_dir):
         os.makedirs(simulation_dir)
 
