@@ -35,7 +35,7 @@ if __name__ == "__main__":
     for num_block in num_block_list:
         if cfg.use_vessl:
             import vessl
-            vessl.init(organization="sun-eng-dgx", project="Final-SHI-PMSP", hp=cfg)
+            vessl.init(organization="snu-eng-dgx", project="Final-SHI-PMSP", hp=cfg)
 
         with open("SHI_sample.json", 'r') as f:
             block_sample = json.load(f)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                             output_dict[test_i][model] = {"Tardiness": tard, "Setup": setup}
 
                 with open(simulation_dir + "/Test Output({0}, {1}, {2}).json".format(num_block, str(round(pt_var, 1)),
-                                                                                     str(round(ddt, 1))), 'r') as f:
+                                                                                     str(round(ddt, 1))), 'w') as f:
                     json.dump(output_dict, f)
 
                 temp = {model: {"Tardiness": 0.0, "Setup": 0.0} for model in trained_model}
