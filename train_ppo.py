@@ -29,7 +29,7 @@ if __name__ == "__main__":
     for weight in weight_list:
         weight_tard = weight
         weight_setup = 1 - weight
-        lr = 0.0001
+        lr = 0.0001 if not cfg.use_vessl else cfg.lr
         optim = "Adam" if not cfg.use_vessl else cfg.optim
         eps_clip = 0.2
         num_episode = 50000
