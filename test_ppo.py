@@ -27,12 +27,12 @@ if __name__ == "__main__":
               160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
               240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
-    trained_model = list()
-    for rw in ["5_5", "6_4", "7_3", "8_2", "9_1"]:
-        for optim in ["Adam", "AH"]:
-            trained_model.append("{0}_{1}".format(rw, optim))
-    trained_model += ["SSPT", "ATCS", "MDD", "COVERT"]
-
+    # trained_model = list()
+    # for rw in ["5_5", "6_4", "7_3", "8_2", "9_1"]:
+    #     for optim in ["Adam", "AH"]:
+    #         trained_model.append("{0}_{1}".format(rw, optim))
+    # trained_model += ["SSPT", "ATCS", "MDD", "COVERT"]
+    trained_model = ["SSPT", "ATCS", "MDD", "COVERT"]
     simulation_dir = './output/test_ppo_ep1/simulation' if not cfg.use_vessl else "/output/simulation"
     if not os.path.exists(simulation_dir):
         os.makedirs(simulation_dir)
