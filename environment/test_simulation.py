@@ -167,7 +167,6 @@ class Routing:
 
         self.indicator = False
         self.decision = False
-        self.routing_rule = None
         self.line = None
 
         self.idle = False
@@ -177,8 +176,6 @@ class Routing:
         self.waiting_event = simpy.Store(env)
         self.queue_list = list()
         # self.waiting_jobs = copy.deepcopy([job.name for job in self.model["Source"].queue.items])
-
-        self.mapping = {0: "SSPT", 1: "ATCS", 2: "MDD", 3: "COVERT"}
 
         self.setup = False
         self.created = 0

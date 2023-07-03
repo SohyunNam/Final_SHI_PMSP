@@ -1,9 +1,9 @@
 import json, os
 from environment.test_simulation import *
 
-weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
-          160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
-          240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
+rule_weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
+               160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
+               240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
 
 def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_rule=None, file_path=None, ddt=None, pt_var=None, test_num=50):
@@ -70,7 +70,8 @@ def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_
                 create_dict[create_time] = list()
             create_dict[create_time].append(copy.deepcopy(block_steel_list))
 
-        routing = Routing(env, model, sim_block, monitor, num_jobs, routing_rule=routing_rule)
+        routing = Routing(env, model, sim_block, monitor, num_jobs, routing_rule=routing_rule,
+                          weight=rule_weight[num_block])
         model["Source"] = Source(env, create_dict, routing, iat, monitor)
 
         for i in range(num_line):
@@ -82,7 +83,7 @@ def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_
         env.run()
         # monitor.get_logs(file_path=file_path + '_{0}.csv'.format(episode))
 
-        tard_list.append(sum(monitor.tardiness) / num_block)
+        tard_list.append(sum(monitor.tardiness) / model["Sink"].total_finish)
         setup_list.append(monitor.setup / model["Sink"].total_finish)
 
     return np.mean(tard_list), np.mean(setup_list)
