@@ -29,7 +29,7 @@ if __name__ == "__main__":
     for weight in weight_list:
         weight_tard = weight
         weight_setup = 1 - weight
-        lr = 0.0001
+        lr = 0.0001 if not cfg.use_vessl else cfg.lr
         optim = "Adam" if not cfg.use_vessl else cfg.optim
         eps_clip = 0.2
         num_episode = 50000
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                         break
                 agent.train_net()
 
-            if episode % 50 == 0 or episode == 1:
+            if episode % 1000 == 0 or episode == 1:
                 tardiness = np.mean(env.monitor.tardiness)
                 setup = env.monitor.setup / env.model["Sink"].total_finish
                 # makespan = max(test_env.monitor.throughput.keys())
