@@ -78,7 +78,7 @@ if __name__ == "__main__":
                                                   ddt=ddt,
                                                   is_train=False)
 
-                                model_path = "./trained_model/env1_exp1/{0}_episode-50000.pt".format(model)
+                                model_path = "./trained_model/{0}_episode-50000.pt".format(model)
                                 agent = PPO(cfg, env.state_size, env.action_size).to(device)
                                 checkpoint = torch.load(model_path)
                                 agent.load_state_dict(checkpoint["model_state_dict"])
