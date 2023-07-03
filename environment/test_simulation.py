@@ -2,6 +2,8 @@ import simpy, math, copy, random
 import pandas as pd
 import numpy as np
 
+np.random.seed(42)
+random.seed(42)
 
 class Steel:
     def __init__(self, name, block, steel, feature, due_date):
@@ -41,8 +43,7 @@ class Source:
     def run(self):
         while len(self.creating_list):
             created_block = self.creating_list.pop(0)
-
-            self.monitor.record(time=self.env.now, event="Block Created", block=created_block[0].block, process="Source")
+            self.monitor.record(time=self.env.now, event="Block Created", block=created_block[0].block, process="Source", memo=created_block[0].due_date)
             for steel in created_block:
                 self.routing.queue.put(steel)
             if self.routing.is_queue_event:
@@ -51,12 +52,12 @@ class Source:
 
             iat = np.random.exponential(self.iat)
             if (self.env.now + iat) % 1440 > 960:
-                self.monitor.record(time=self.env.now, event="Day Off")
+                self.monitor.record(time=self.env.now, event="Day Off", process="Source")
                 today = math.floor(self.env.now / 1440)
                 next_day = today + 1 if today % 7 != 5 else today + 2
                 to_next_day = next_day * 1440 - self.env.now
                 yield self.env.timeout(to_next_day)
-                self.monitor.record(time=self.env.now, event="Day On")
+                self.monitor.record(time=self.env.now, event="Day On", process="Source")
             yield self.env.timeout(iat)
 
 
@@ -92,22 +93,21 @@ class Process:
             setup_time = 0
             setup_memo = None
             part = yield self.queue.get()
+            self.job = part
 
-            if (self.job is not None) and (part.web_face != self.job.web_face):
+            self.start_time = self.env.now
+            if self.setup != self.job.web_face:
                 setup_time = 5
-                setup_memo = "{0} to {1}".format(self.job.web_face, part.web_face)
+                setup_memo = "{0} to {1}".format(self.setup, self.job.web_face)
                 self.monitor.setup += 1
-                self.monitor.setup_list.append(1)
                 self.setup = part.web_face
-            elif (self.job is not None) and (part.web_face == self.job.web_face):
+            else:
                 self.monitor.record(time=self.env.now, part=part.name, block=part.block, event="Non-SetUp",
-                                    process=self.name, memo="{0} to {1}".format(self.job.web_face, part.web_face))
+                                    process=self.name, memo="{0} to {1}".format(self.setup, self.job.web_face))
 
             self.block = part.block
-            self.job = part
             self.idle = False
             # 시작 시간 기록
-            self.start_time = self.env.now
             part.started = self.env.now
             # State 계산을 위한 예상 작업 시간 - 평균값 사용
             self.planned_finish_time = self.env.now + part.avg_pt + setup_time
@@ -117,12 +117,12 @@ class Process:
 
             # 다음 날로 이동
             if (self.env.now + setup_time + part.avg_pt) % 1440 > 960:
-                self.monitor.record(time=self.env.now, event="Day Off")
+                self.monitor.record(time=self.env.now, event="Day Off", process=self.name)
                 today = math.floor(self.env.now / 1440)
                 next_day = today + 1 if today % 7 != 5 else today + 2
                 to_next_day = next_day * 1440 - self.env.now
                 yield self.env.timeout(to_next_day)
-                self.monitor.record(time=self.env.now, event="Day On")
+                self.monitor.record(time=self.env.now, event="Day On", process=self.name)
 
             # 셋업 발생
             if setup_memo is not None:
@@ -150,21 +150,24 @@ class Process:
         self.idle = True
         self.job = None
         self.block = None
+        self.start_time = 0
         self.setup = random.randint(0, 200)
         self.planned_finish_time = 0
 
 
 class Routing:
-    def __init__(self, env, model, block_info, monitor, end_num, routing_rule=None):
+    def __init__(self, env, model, block_info, monitor, end_num, weight=None, routing_rule=None):
         self.env = env
         self.model = model
         self.block_info = block_info
         self.monitor = monitor
         self.end_num = end_num
+        self.weight = weight
         self.routing_rule = routing_rule
 
         self.indicator = False
         self.decision = False
+        self.routing_rule = None
         self.line = None
 
         self.idle = False
@@ -174,6 +177,8 @@ class Routing:
         self.waiting_event = simpy.Store(env)
         self.queue_list = list()
         # self.waiting_jobs = copy.deepcopy([job.name for job in self.model["Source"].queue.items])
+
+        self.mapping = {0: "SSPT", 1: "ATCS", 2: "MDD", 3: "COVERT"}
 
         self.setup = False
         self.created = 0
@@ -193,7 +198,9 @@ class Routing:
             self.decision = decision[0]
             location = decision[1]
             self.line = location
+            self.indicator = True
 
+            self.decision = None
             self.monitor.record(time=self.env.now, event="Routing Start", process=location, memo=self.routing_rule)
             self.setup = False
 
@@ -235,8 +242,8 @@ class Routing:
     def ATCS(self):
         job_list = copy.deepcopy(self.queue_list)
         calling_line = self.model[self.line]
-        k1 = 6.7
-        k2 = 1.3
+        k1 = self.weight["ATCS"][0]
+        k2 = self.weight["ATCS"][1]
         p_avg = np.mean(
             [self.block_info["Block_{0}".format(job.split("_")[1])][job].avg_pt for job in job_list])
         s_avg = np.mean(
@@ -275,7 +282,7 @@ class Routing:
 
     def COVERT(self):
         job_list = copy.deepcopy(self.queue_list)
-        K = 14
+        K = self.weight["COVERT"]
 
         idx_list = []
         for job_name in job_list:
@@ -299,13 +306,20 @@ class Routing:
     def reset(self):
         self.indicator = False
         self.decision = False
+        self.routing_rule = None
         self.line = None
 
         self.idle = False
         self.job = None
-        self.created = 0
 
-        # self.waiting_jobs = copy.deepcopy([job.name for job in self.model["Source"].queue.items])
+        self.queue.items = list()
+        self.waiting_event.items = list()
+        self.queue_list = list()
+
+        self.setup = False
+        self.created = 0
+        self.queue_event = self.env.event()
+        self.is_queue_event = False
 
 
 class Sink:
@@ -332,20 +346,20 @@ class Sink:
         self.makespan = self.env.now / 1440
 
         job.completed = math.floor(self.env.now/1440)  # 끝난 날짜
+        difference = (max(self.env.now - (self.block_info[job.block]["due_date"] * 1440 + 960), 0)) / 60  # due date 대비 얼마나 늦게 끝났는 지 (현재 시각 - 납기일)
+        self.finished_block.append(difference) # Steel 단위로 tardiness penalty 주는 걸로 바꿈, # State 및 Reward 시 사용
+        self.monitor.tardiness.append(difference)
 
         day = math.floor(self.env.now / 1440)  # 현재 날짜
         if day not in self.monitor.throughput.keys():
             self.monitor.throughput[day] = 0
         self.monitor.throughput[day] += 1
-        self.monitor.record(time=self.env.now, part=job.name, block=job.block, event="Completed", process="Sink")
+        self.monitor.record(time=self.env.now, part=job.name, block=job.block, event="Completed", process="Sink",
+                            memo=difference)
 
         if self.finished[job.block]["num"] == self.block_info[job.block]["num_steel"]:
-            self.finished_block.append([job.block, day])  # State 및 Reward 시 사용
-            difference = max((self.env.now / 1440) - self.block_info[job.block]["due_date"], 0)  # due date 대비 얼마나 늦게 끝났는 지 (현재 시각 - 납기일)
             self.monitor.record(time=self.env.now, part=job.name, block=job.block, event="Block Completed",
                                 process="Sink", memo=difference)
-
-            self.monitor.tardiness.append(difference)
 
             self.finished[job.block]["time"].append(self.env.now)
 
@@ -366,7 +380,6 @@ class Monitor:
         self.memo = list()
 
         self.setup = 0
-        self.setup_list = list()
         self.tardiness = list()
         self.throughput = dict()
 

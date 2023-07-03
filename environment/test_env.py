@@ -13,7 +13,7 @@ def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_
     for episode in range(test_num):
         block_list = sample_data["block_list"]
         due_date_list = sample_data["due_date"]
-        iat = (960 * 6 * int(num_block / 80)) / num_block
+        iat = (960 * 6 * round(num_block / 80)) / num_block
         # if num_block == 240:
         #     week3_due_date = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]
         #     due_date_list = np.random.choice(week3_due_date, size=num_block)
@@ -80,7 +80,7 @@ def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_
         model["Sink"].reset()
 
         env.run()
-        monitor.get_logs(file_path=file_path + '_{0}.csv'.format(episode))
+        # monitor.get_logs(file_path=file_path + '_{0}.csv'.format(episode))
 
         tard_list.append(sum(monitor.tardiness) / num_block)
         setup_list.append(monitor.setup / model["Sink"].total_finish)
