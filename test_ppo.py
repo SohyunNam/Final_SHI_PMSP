@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
         with open("SHI_sample.json", 'r') as f:
             block_sample = json.load(f)
-        with open("SHI_test_sample_{0}_new.json".format(num_block), 'r') as f:
+        with open("./data/SHI_test_sample_{0}.json".format(num_block), 'r') as f:
             sample_data = json.load(f)
 
         for ddt in ddt_list:
