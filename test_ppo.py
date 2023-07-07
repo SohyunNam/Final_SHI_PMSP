@@ -19,21 +19,23 @@ if __name__ == "__main__":
     else:
         from environment.env import *
 
-    num_block_list = [80, 160, 240]
+    num_block_list = [60, 80, 100]
     ddt_list = [0.8, 1.0, 1.2]
     pt_var_list = [0.1, 0.2, 0.3, 0.4, 0.5]
 
-    weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
+    weight = {60: {"ATCS": [5.547, 0.955], "COVERT": 0.4},
+              80: {"ATCS": [5.880, 0.940], "COVERT": 6.6},
+              100: {"ATCS": [6.145, 0.972], "COVERT": 9.0},
               160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
               240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
     trained_model = list()
-    for rw in ["0_1"]:
+    for rw in ["0_1", "1_0", "5_5", "6_4", "7_3", "8_2", "9_1"]:
         for optim in ["Adam", "AH"]:
             trained_model.append("{0}_{1}".format(rw, optim))
     trained_model += ["SSPT", "ATCS", "MDD", "COVERT"]
 
-    simulation_dir = './output/test_ppo_ep1_0_1/simulation' if not cfg.use_vessl else "/output/simulation"
+    simulation_dir = './output/test_ppo_ep2/simulation' if not cfg.use_vessl else "/output/simulation"
     if not os.path.exists(simulation_dir):
         os.makedirs(simulation_dir)
 

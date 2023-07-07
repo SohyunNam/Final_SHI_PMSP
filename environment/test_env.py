@@ -1,9 +1,11 @@
 import json, os
 from environment.test_simulation import *
 
-rule_weight = {80: {"ATCS": [5.88, 0.95], "COVERT": 6.605},
-               160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
-               240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
+rule_weight = {60: {"ATCS": [50547, 0.955], "COVERT": 0.4},
+              80: {"ATCS": [5.880, 0.940], "COVERT": 6.6},
+              100: {"ATCS": [6.145, 0.972], "COVERT": 9.0},
+              160: {"ATCS": [6.605, 0.874], "COVERT": 1.4},
+              240: {"ATCS": [7.053, 0.848], "COVERT": 0.9}}
 
 
 def test(num_block=80, num_line=3, block_sample=None, sample_data=None, routing_rule=None, file_path=None, ddt=None, pt_var=None, test_num=50):

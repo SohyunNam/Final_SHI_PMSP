@@ -102,6 +102,7 @@ class PPO(nn.Module):
                 loss.mean().backward()
             elif self.optim == "AdaHessian":
                 loss.mean().backward(create_graph=True)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), 1)
             self.optimizer.step()
 
     def save(self, episode, file_dir):

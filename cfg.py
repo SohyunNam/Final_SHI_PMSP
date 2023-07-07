@@ -23,7 +23,7 @@ def get_cfg():
     parser.add_argument("--optim", type=str, default="Adam", help="optimizer, Adam | AdaHessian")
 
     parser.add_argument("--env", type=str, default="OE", help="optimizer, OE | EE")
-    parser.add_argument("--test_num", type=int, default=50, help="The number of test")
+    parser.add_argument("--test_num", type=int, default=100, help="The number of test")
 
     # parser.add_argument("--log_interval", type=int, default=100, help="log interval")
 
